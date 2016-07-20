@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+<struts>
+	<!-- 配置上传文件的出错信息的资源文件 -->
+	<constant name="struts.custom.i18n.resources" value="cn.itcast.action.FileUploadMessage" />
+	<constant name="struts.devMode" value="true" />
+
+	<package name="s2sh" namespace="/" extends="struts-default">
+		<!-- 使用Struts2自身创建Action -->
+		<action name="userAction_*" class="userAction"
+			method="{1}">
+			<result name="add">/success.jsp</result>
+		</action>
+		
+	</package>
+
+</struts>

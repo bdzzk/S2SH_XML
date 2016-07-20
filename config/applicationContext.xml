@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+ 	       http://www.springframework.org/schema/beans/spring-beans.xsd
+ 	       http://www.springframework.org/schema/context 
+ 	       http://www.springframework.org/schema/context/spring-context.xsd
+ 	       http://www.springframework.org/schema/tx 
+ 	       http://www.springframework.org/schema/tx/spring-tx.xsd
+ 	       http://www.springframework.org/schema/aop 
+ 	      http://www.springframework.org/schema/aop/spring-aop.xsd">
+ 	      <!-- 0加载properties文件 -->
+	<context:property-placeholder location="classpath:c3p0-db.properties" />
+	<!-- 1 配置数据源，读取properties文件信息 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${jdbc.driverClass}"></property>
+		<property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+		<property name="user" value="${jdbc.user}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+	</bean>
+	
+ 	      <!-- 1 配置SessionFactory -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<!-- 不加载hibernate核心配置文件 -->
+<!-- 		<property name="configLocation" value="classpath:hibernate.cfg.xml"> -->
+<!-- 		</property> -->
+		<!-- 1.配置 DataSource-->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 2.hibernate核心配置文件其他配置信息-->
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<prop key="hibernate.javax.persitence.validation.mode">none</prop>
+				<prop key="hibernate.current_session_context_class">thread</prop>	
+			</props>		
+		</property>
+		<!-- 3.配置对象关系映射文件 -->		
+		<property name="mappingResources">
+			<list>
+				<value>hbsi/domain/User.hbm.xml</value>
+			</list>
+		</property>
+		
+	</bean>
+	
+	<!-- 3 配置dao -->
+	<bean id="userDao" class="hbsi.dao.impl.UserDaoImpl">
+		<property name="sessionFactory" ref="sessionFactory">
+		</property>
+	</bean>
+	<!-- 4 配置service -->
+	<bean id="userService" class="hbsi.service.impl.UserServiceImpl">
+		<property name="userDao" ref="userDao"></property>
+	</bean>
+	<!-- 5.配置Action类 -->
+	<bean id="userAction" class="hbsi.action.UserAction">
+		<property name="userService" ref="userService"></property>
+	</bean>
+	
+	
+	<!-- 事务管理 -->
+	<!-- #1 事务管理器,就是平台，spring工具产生，依赖于使用 持久方案（hibernate、jdbc等） -->
+	<bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	<!-- #2 通知：增强事务 -->
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="save*" />
+			<tx:method name="update*" />
+			<tx:method name="delete*" />
+			<tx:method name="find*" read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+	<!-- #3 切面：将切入点 与 通知 关联 -->
+	<aop:config>
+		<aop:advisor advice-ref="txAdvice"
+			pointcut="execution(* hbsi.service..*.*(..))" />
+	</aop:config>
+	
+</beans>
